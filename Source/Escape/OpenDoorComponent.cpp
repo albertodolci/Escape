@@ -22,16 +22,41 @@ void UOpenDoorComponent::BeginPlay()
 	// vado a catturare il pawn attuale del giocatore
 	Chiave = GetWorld()->GetFirstPlayerController()->GetPawn();
 
-	//OpenDoor();
+	//memorizzo la rotazione iniziale
+	// in caso di successiva chiusura della porta
+	// ma anche per sapere quando ho raggiunto
+	//l'apertura desiderata
+	StartRotation = AntaDaAprire->GetComponentRotation();
+}
+
+
+void UOpenDoorComponent::OpenDoor(float DT)
+{
+
+	FRotator ActualRot = AntaDaAprire->GetComponentRotation();
+
+	if (ActualRot.Yaw > StartRotation.Yaw - OpenDeg)
+	{
+		ActualRot.Yaw -= OpenDeg * DT;
+		AntaDaAprire->SetWorldRotation(ActualRot);
+	}
+	else bClose = false;
 	
 }
 
 
-void UOpenDoorComponent::OpenDoor()
+void UOpenDoorComponent::CloseDoor(float DT)
 {
-	FRotator StartRot = AntaDaAprire->GetComponentRotation();
-	StartRot.Yaw -= 90;
-	AntaDaAprire->SetWorldRotation(StartRot);
+
+	FRotator ActualRot = AntaDaAprire->GetComponentRotation();
+
+	if (ActualRot.Yaw < StartRotation.Yaw)
+	{
+		ActualRot.Yaw += OpenDeg * DT;
+		AntaDaAprire->SetWorldRotation(ActualRot);
+	}
+	else bClose = true;
+
 }
 
 
@@ -42,10 +67,13 @@ void UOpenDoorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 
 	if (!Chiave || !Attivatore) return;
 
-	if (Attivatore->IsOverlappingActor(Chiave) && bClose)
+	if (Attivatore->IsOverlappingActor(Chiave))
 	{
-		OpenDoor();
-		bClose = false;
+		if (bClose) OpenDoor(DeltaTime);	
+	}
+	else
+	{
+		if (!bClose) CloseDoor(DeltaTime);
 	}
 		  
 	// ...

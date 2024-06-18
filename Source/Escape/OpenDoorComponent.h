@@ -27,11 +27,19 @@ public:
 
 	bool bClose = true;
 
+	FRotator StartRotation;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-	void OpenDoor();
+	void OpenDoor(float DT);
+
+	void CloseDoor(float DT);
+
+
+	UPROPERTY(EditAnywhere)
+	float OpenDeg{ 90.f };
 
 public:	
 	// Called every frame
