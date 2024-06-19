@@ -25,7 +25,7 @@ public:
 	UPROPERTY(EditAnyWhere, Category = "OpenDoor")
 	AActor* Chiave; // memorizzero l'oggetto che entrato nel volume apre la porta
 
-	bool bClose = true;
+	bool bOpening = false; // vera mentre sto aprendo 
 
 	FRotator StartRotation;
 
@@ -41,9 +41,19 @@ protected:
 	UPROPERTY(EditAnywhere)
 	float OpenDeg{ 90.f };
 
+
+	float OffsetDeg{ 0.f };
+
+	UPROPERTY(EditAnywhere)
+	float DelayClose{ 5.f };
+
+
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	void ResetClose();
+
+	FTimerHandle CloseTimer;
 		
 };

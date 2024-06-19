@@ -26,7 +26,10 @@ void UOpenDoorComponent::BeginPlay()
 	// in caso di successiva chiusura della porta
 	// ma anche per sapere quando ho raggiunto
 	//l'apertura desiderata
+	if (!AntaDaAprire) { UE_LOG(LogTemp, Error, TEXT("Manca Anta")); return; }
 	StartRotation = AntaDaAprire->GetComponentRotation();
+   //-180/180  360 / - 360
+
 }
 
 
@@ -35,12 +38,14 @@ void UOpenDoorComponent::OpenDoor(float DT)
 
 	FRotator ActualRot = AntaDaAprire->GetComponentRotation();
 
-	if (ActualRot.Yaw > StartRotation.Yaw - OpenDeg)
+	//if (ActualRot.Yaw > StartRotation.Yaw - OpenDeg)
+	if (OffsetDeg < OpenDeg)
 	{
 		ActualRot.Yaw -= OpenDeg * DT;
+		OffsetDeg     += OpenDeg * DT;
 		AntaDaAprire->SetWorldRotation(ActualRot);
 	}
-	else bClose = false;
+	//else bClose = false;
 	
 }
 
@@ -50,12 +55,14 @@ void UOpenDoorComponent::CloseDoor(float DT)
 
 	FRotator ActualRot = AntaDaAprire->GetComponentRotation();
 
-	if (ActualRot.Yaw < StartRotation.Yaw)
+	//if (ActualRot.Yaw < StartRotation.Yaw)
+	if (OffsetDeg > 0)
 	{
-		ActualRot.Yaw += OpenDeg * DT;
+		ActualRot.Yaw += OpenDeg * DT;	
+		OffsetDeg     -= OpenDeg * DT;
 		AntaDaAprire->SetWorldRotation(ActualRot);
 	}
-	else bClose = true;
+//	else bClose = true;
 
 }
 
@@ -64,18 +71,48 @@ void UOpenDoorComponent::CloseDoor(float DT)
 void UOpenDoorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
+	
+	
 	if (!Chiave || !Attivatore) return;
+//	UE_LOG(LogTemp, Error, TEXT("TICK 2 "));
+
+	//GetWorld()->GetTimerManager().SetTimer
 
 	if (Attivatore->IsOverlappingActor(Chiave))
 	{
-		if (bClose) OpenDoor(DeltaTime);	
+		bOpening = true;
+		//if (bClose)  OpenDoor(DeltaTime);	
 	}
 	else
 	{
-		if (!bClose) CloseDoor(DeltaTime);
+		if (!GetWorld()->GetTimerManager().IsTimerActive(CloseTimer))
+		{
+			GetWorld()->GetTimerManager().SetTimer
+			(CloseTimer, this, &UOpenDoorComponent::ResetClose, DelayClose);
+		}
+		//if (!bClose) CloseDoor(DeltaTime);
 	}
-		  
+
+
+
+	if (bOpening)
+	{ 
+	OpenDoor(DeltaTime);
+	//UE_LOG(LogTemp, Error, TEXT("APRO"));
+	}
+	else 
+	{ 
+	CloseDoor(DeltaTime);       
+	//UE_LOG(LogTemp, Error, TEXT("CHIUDO"));
+	};
+
+
+
 	// ...
 }
 
+void UOpenDoorComponent::ResetClose()
+{
+	bOpening = false;
+
+}
